@@ -1,0 +1,97 @@
+// ==============================================
+// 1. BẢNG NGƯỜI DÙNG (USERS)
+// ==============================================
+Table users {
+  id integer [primary key, increment]
+  email varchar(255) [unique, not null]
+  password_hash varchar(255) [not null]
+  full_name varchar(100)
+  
+  // Trạng thái tài khoản (active, banned, etc.)
+  status varchar(20) [default: 'active']
+  
+  created_at timestamp [default: `now()`]
+  updated_at timestamp [default: `now()`]
+}
+
+// ==============================================
+// 2. BẢNG QUẢN LÝ KHÓA & TOKEN (KEY STORES)
+// Dùng cho chiến lược Refresh Token Rotation
+// ==============================================
+Table key_stores {
+  id integer [primary key, increment]
+  user_id integer [not null]
+  
+  // Cặp khóa RSA (hoặc EdDSA) riêng biệt cho mỗi user/thiết bị
+  public_key text [not null]
+  private_key text [not null]
+  
+  // Refresh Token hiện tại đang có hiệu lực
+  refresh_token text [not null]
+  
+  // Mảng chứa các Refresh Token đã sử dụng.
+  // Nếu hacker dùng lại 1 token trong list này -> Hệ thống phát hiện bất thường -> Xóa record này -> User buộc login lại.
+  refresh_tokens_used json [note: "Mảng chứa lịch sử RT đã dùng"]
+  
+  created_at timestamp [default: `now()`]
+  updated_at timestamp [default: `now()`]
+}
+
+// ==============================================
+// 3. BẢNG GHI CHÚ (NOTES)
+// ==============================================
+Table notes {
+  id integer [primary key, increment]
+  user_id integer [not null]
+  
+  title varchar(255) [default: 'Untitled']
+  content text [note: "Nội dung note (text/markdown)"]
+  
+  // Đánh dấu note quan trọng hoặc đã xóa tạm
+  is_pinned boolean [default: false]
+  is_deleted boolean [default: false] 
+  
+  created_at timestamp [default: `now()`]
+  updated_at timestamp [default: `now()`]
+}
+
+// ==============================================
+// 4. BẢNG HÌNH ẢNH (IMAGES)
+// Lưu trữ metadata của ảnh trên S3
+// ==============================================
+Table images {
+  id integer [primary key, increment]
+  note_id integer [not null]
+  
+  // QUAN TRỌNG: Chỉ lưu đường dẫn file (Key) trên S3.
+  // Ví dụ: "u123/notes/img_abc.jpg"
+  // Khi query, Backend sẽ dùng key này + CloudFront Signer để tạo URL tạm thời.
+  object_key varchar(500) [not null]
+  
+  // Tên gốc của file lúc upload (để hiển thị tooltip hoặc download)
+  file_name varchar(255)
+  
+  // Kích thước file (bytes) để quản lý dung lượng storage user
+  file_size integer
+  
+  // Loại file (image/png, image/jpeg)
+  mime_type varchar(50)
+  
+  created_at timestamp [default: `now()`]
+}
+
+// ==============================================
+// QUAN HỆ (RELATIONSHIPS)
+// ==============================================
+
+// 1 User có nhiều KeyStore (Đăng nhập trên điện thoại, laptop...)
+// Xóa User -> Xóa hết Key
+Ref: users.id < key_stores.user_id [delete: cascade]
+
+// 1 User có nhiều Note
+// Xóa User -> Xóa hết Note
+Ref: users.id < notes.user_id [delete: cascade]
+
+// 1 Note có nhiều Ảnh
+// Xóa Note -> Xóa hết Ảnh (Lưu ý: Cần xử lý logic backend để xóa file trên S3 nữa)
+Ref: notes.id < images.note_id [delete: cascade]

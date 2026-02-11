@@ -1,0 +1,79 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id            Int      @id @default(autoincrement())
+  email         String   @unique @db.VarChar(255)
+  password_hash String   @db.VarChar(255)
+  full_name     String?  @db.VarChar(100)
+  status        UserStatus   @default(ACTIVE)
+  
+  created_at    DateTime @default(now()) 
+  updated_at    DateTime @updatedAt 
+
+  // Quan hệ ngược (Relations)
+  keyStores    KeyStore[]
+  notes        Note[]
+
+  @@map("users")
+}
+
+model KeyStore {
+  id                Int      @id @default(autoincrement())
+  userId            Int      
+  public_key        String   
+  private_key       String   
+  refresh_token     String   
+  refresh_tokens_used Json?    
+  
+  created_at    DateTime @default(now()) 
+  updated_at    DateTime @updatedAt 
+
+  // Quan hệ
+  user              User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("key_stores")
+}
+
+model Note {
+  id        Int      @id @default(autoincrement())
+  user_id    Int       
+  title     String?  @default("Untitled") @db.VarChar(255)
+  content   String?  
+  is_pinned  Boolean  @default(false) 
+  is_deleted Boolean  @default(false) 
+  
+  created_at    DateTime @default(now()) 
+  updated_at    DateTime @updatedAt 
+
+  // Quan hệ
+  user      User     @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  images    Image[]
+  @@map("notes")
+}
+
+model Image {
+  id        Int      @id @default(autoincrement())
+  note_id    Int      
+  object_key String    @db.VarChar(500)
+  file_name  String?   @db.VarChar(255)
+  file_size  Int?     
+  mime_type  String?   @db.VarChar(50)
+  
+  created_at DateTime @default(now()) 
+
+  note      Note     @relation(fields: [note_id ], references: [id], onDelete: Cascade)
+
+  @@map("images")
+}
+
+enum UserStatus {
+  ACTIVE
+  INACTIVE
+}

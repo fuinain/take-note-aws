@@ -1,0 +1,74 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id           Int      @id @default(autoincrement())
+  email        String   @unique @db.VarChar(255)
+  passwordHash String   @map("password_hash") @db.VarChar(255)
+  fullName     String?  @map("full_name") @db.VarChar(100)
+  status       String   @default("active") @db.VarChar(20)
+  
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @default(now()) @updatedAt @map("updated_at")
+
+  // Quan hệ ngược (Relations)
+  keyStores    KeyStore[]
+  notes        Note[]
+
+  @@map("users")
+}
+
+model KeyStore {
+  id                Int      @id @default(autoincrement())
+  userId            Int      @map("user_id")
+  publicKey         String   @map("public_key") // Prisma mặc định String là text
+  privateKey        String   @map("private_key")
+  refreshToken      String   @map("refresh_token")
+  refreshTokensUsed Json?    @map("refresh_tokens_used") // Kiểu JSON của Postgres
+  
+  createdAt         DateTime @default(now()) @map("created_at")
+  updatedAt         DateTime @default(now()) @updatedAt @map("updated_at")
+
+  // Quan hệ
+  user              User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("key_stores")
+}
+
+model Note {
+  id        Int      @id @default(autoincrement())
+  userId    Int      @map("user_id")
+  title     String?  @default("Untitled") @db.VarChar(255)
+  content   String?  // Mặc định là text
+  isPinned  Boolean  @default(false) @map("is_pinned")
+  isDeleted Boolean  @default(false) @map("is_deleted")
+  
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @default(now()) @updatedAt @map("updated_at")
+
+  // Quan hệ
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  images    Image[]
+  @@map("notes")
+}
+
+model Image {
+  id        Int      @id @default(autoincrement())
+  noteId    Int      @map("note_id")
+  objectKey String   @map("object_key") @db.VarChar(500)
+  fileName  String?  @map("file_name") @db.VarChar(255)
+  fileSize  Int?     @map("file_size")
+  mimeType  String?  @map("mime_type") @db.VarChar(50)
+  
+  createdAt DateTime @default(now()) @map("created_at")
+
+  note      Note     @relation(fields: [noteId], references: [id], onDelete: Cascade)
+
+  @@map("images")
+}

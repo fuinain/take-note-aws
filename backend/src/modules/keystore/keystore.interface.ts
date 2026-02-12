@@ -1,12 +1,11 @@
 /**
  * Interface cho việc tạo KeyStore mới
  */
-export interface ICreateKeyStoreData {
-  userId: number;
+export interface ICreateKeyStore {
+  user_id: number;
   public_key: string;
   private_key: string;
   refresh_token: string;
-  refresh_tokens_used?: any | null;
 }
 
 /**
@@ -18,3 +17,4 @@ export interface IUpdateKeyStoreData {
   refresh_token?: string;
   refresh_tokens_used?: any | null;
 }
+

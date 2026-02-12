@@ -5,7 +5,7 @@ import {
   HttpException,
   HttpStatus,
 } from '@nestjs/common';
-import { Response } from 'express';
+import { Request, Response } from 'express';
 import { ApiResponse } from '../dto/api-response.dto';
 
 /**
@@ -17,22 +17,43 @@ export class HttpExceptionFilter implements ExceptionFilter {
   catch(exception: unknown, host: ArgumentsHost) {
     const ctx = host.switchToHttp();
     const response = ctx.getResponse<Response>();
+    const request = ctx.getRequest<Request>();
+    const status =
+      exception instanceof HttpException
+        ? exception.getStatus()
+        : HttpStatus.INTERNAL_SERVER_ERROR;
 
-    let status = HttpStatus.INTERNAL_SERVER_ERROR;
-    let message = 'Internal server error';
+    const message =
+      exception instanceof HttpException
+        ? exception.getResponse()
+        : 'Internal server error';
 
-    if (exception instanceof HttpException) {
-      status = exception.getStatus();
-      const exceptionResponse = exception.getResponse();
-
-      message =
-        typeof exceptionResponse === 'string'
-          ? exceptionResponse
-          : (exceptionResponse as any).message || message;
+    // Log chi tiết lỗi
+    if (status === HttpStatus.INTERNAL_SERVER_ERROR) {
+      console.error('====================================');
+      console.error(`Status: ${status} Error: ${JSON.stringify(message)}`);
+      console.error(`Request: ${request.method} ${request.url}`);
+      console.error(`Body: ${JSON.stringify(request.body)}`);
+      if (exception instanceof Error) {
+        console.error(`Stack: ${exception.stack}`);
+      }
+      console.error('====================================');
+    } else {
+      console.warn(
+        `[${request.method}] ${request.url} - Status: ${status} - Message: ${JSON.stringify(
+          message,
+        )}`,
+      );
     }
 
-    const errorResponse = ApiResponse.error(status, message);
-
-    response.status(status).json(errorResponse);
+    response.status(status).json({
+      statusCode: status,
+      timestamp: new Date().toISOString(),
+      path: request.url,
+      message:
+        typeof message === 'string'
+          ? message
+          : (message as any).message || message,
+    });
   }
 }

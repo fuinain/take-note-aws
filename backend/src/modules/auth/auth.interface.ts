@@ -19,3 +19,14 @@ export interface IUpdateUserData {
   full_name?: string | null;
   status?: UserStatus;
 }
+
+export interface IRegisterUser {
+  email: string;
+  full_name: string | null;
+  password: string;
+}
+
+export interface ILoginUser {
+  email: string;
+  password: string;
+}

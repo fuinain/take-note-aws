@@ -28,14 +28,14 @@ export function createKeyPair(): {
 }
 
 /**
- * 
- * @param payload 
- * @param publicKey 
- * @param privateKey 
- * @returns 
+ *
+ * @param payload
+ * @param publicKey
+ * @param privateKey
+ * @returns
  */
 export function createTokenPair(
-  payload: any,
+  payload: object,
   publicKey: string,
   privateKey: string,
 ): {

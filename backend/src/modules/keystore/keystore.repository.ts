@@ -1,4 +1,4 @@
-import { ICreateKeyStoreData } from './interfaces/keystore-data.interface';
+import { ICreateKeyStore } from './keystore.interface';
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from 'src/common/services/prisma.service';
 
@@ -6,7 +6,7 @@ import { PrismaService } from 'src/common/services/prisma.service';
 export class KeystoreRepository {
   constructor(private readonly prisma: PrismaService) {}
 
-  async create(data: ICreateKeyStoreData) {
+  async create(data: ICreateKeyStore) {
     return this.prisma.keyStore.create({ data });
   }
 }

@@ -26,17 +26,17 @@ model User {
 
 model KeyStore {
   id                Int      @id @default(autoincrement())
-  userId            Int      
+  user_id            Int      
   public_key        String   
   private_key       String   
-  refresh_token     String   
+  refresh_token     String?   
   refresh_tokens_used Json?    
   
   created_at    DateTime @default(now()) 
   updated_at    DateTime @updatedAt 
 
   // Quan hệ
-  user              User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user              User     @relation(fields: [user_id], references: [id], onDelete: Cascade)
 
   @@map("key_stores")
 }
